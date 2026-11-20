@@ -11,7 +11,7 @@ Use Node.js 22.18+ on the 22.x line or Node.js 24+. Once the package is availabl
 on npm, install it with Oxlint and its type-aware backend.
 
 ```sh
-npm install -D @cloudflare/oxlint-config oxlint@^1.94.0 tsrs@0.25.0-ts7.1.0-beta
+npm install -D @cloudflare/oxlint-config oxlint@^1.94.0 tsrs@^7.1.0-beta.tsrs2
 ```
 
 Create `oxlint.config.ts` at the project root.

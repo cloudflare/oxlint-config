@@ -28,16 +28,16 @@
     "test": "vp test"
   },
   "dependencies": {
-    "@nkzw/oxlint-config": "3.0.0"
+    "@nkzw/oxlint-config": "3.0.1"
   },
   "devDependencies": {
     "oxlint": "^1.94.0",
-    "tsrs": "^0.25.0-ts7.1.0-beta",
+    "tsrs": "^7.1.0-beta.tsrs3",
     "vite-plus": "^1.7.0"
   },
   "peerDependencies": {
     "oxlint": "^1.94.0",
-    "tsrs": ">=0.25.0-ts7.1.0-beta"
+    "tsrs": ">=7.1.0-beta.tsrs2"
   },
   "engines": {
     "node": "^22.18.0 || >=24.0.0"
