@@ -41,7 +41,7 @@ In a Vite+ project using `vite-plus@1.7.0` or later, install the preset.
 Vite+ supplies Oxlint and its type-aware backend.
 
 ```sh
-pnpm add -D @cloudflare/oxlint-config
+vp add -D @cloudflare/oxlint-config
 ```
 
 Import the Vite+ entry in the project's root `vite.config.ts`.
