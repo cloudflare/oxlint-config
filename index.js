@@ -3,7 +3,6 @@
 //     https://opensource.org/licenses/Apache-2.0
 
 import nkzw from '@nkzw/oxlint-config';
-import { defineConfig } from 'oxlint';
 
 const typeScriptFiles = ['**/*.{ts,tsx,mts,cts}'];
 const typeScriptTests = [
@@ -11,12 +10,13 @@ const typeScriptTests = [
   '**/__tests__/**/*.{ts,tsx,mts,cts}',
 ];
 
-export default defineConfig({
+/** @satisfies {import('oxlint').OxlintConfig} */
+const config = {
   ...nkzw,
   ignorePatterns: ['**/node_modules/**'],
   overrides: [
     // nkzw exempts specific application entry points from no-console.
-    ...nkzw.overrides.filter(({ rules }) => rules?.['no-console'] !== 'off'),
+    ...(nkzw.overrides ?? []).filter(({ rules }) => rules?.['no-console'] !== 'off'),
     {
       files: typeScriptFiles,
       rules: {
@@ -84,4 +84,6 @@ export default defineConfig({
     'typescript/use-unknown-in-catch-callback-variable': 'error',
     'unicorn/prefer-set-has': 'error',
   },
-});
+};
+
+export default config;

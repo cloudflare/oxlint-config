@@ -10,12 +10,17 @@
   "files": [
     "index.js",
     "index.d.ts",
+    "vite-plus.d.ts",
     "skills/migrate-oxlint-config/SKILL.md"
   ],
   "type": "module",
   "exports": {
     ".": {
       "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./vite-plus": {
+      "types": "./vite-plus.d.ts",
       "default": "./index.js"
     }
   },
@@ -28,7 +33,7 @@
     "test": "vp test"
   },
   "dependencies": {
-    "@nkzw/oxlint-config": "3.0.0"
+    "@nkzw/oxlint-config": "https://codeload.github.com/nkzw-tech/oxlint-config/tar.gz/bf449304786239832eb7a0c4c4391f70a439ef3e"
   },
   "devDependencies": {
     "oxlint": "^1.94.0",
@@ -37,7 +42,19 @@
   },
   "peerDependencies": {
     "oxlint": "^1.94.0",
-    "tsrs": ">=0.25.0-ts7.1.0-beta"
+    "tsrs": ">=0.25.0-ts7.1.0-beta",
+    "vite-plus": ">=1.7.0"
+  },
+  "peerDependenciesMeta": {
+    "oxlint": {
+      "optional": true
+    },
+    "tsrs": {
+      "optional": true
+    },
+    "vite-plus": {
+      "optional": true
+    }
   },
   "engines": {
     "node": "^22.18.0 || >=24.0.0"

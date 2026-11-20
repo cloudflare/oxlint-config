@@ -176,8 +176,8 @@ importers:
   .:
     dependencies:
       '@nkzw/oxlint-config':
-        specifier: 3.0.0
-        version: 3.0.0(eslint@10.15.0)(oxlint@1.94.0(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3)))(tsrs@0.25.0-ts7.1.0-beta)(typescript@6.0.3)
+        specifier: https://codeload.github.com/nkzw-tech/oxlint-config/tar.gz/bf449304786239832eb7a0c4c4391f70a439ef3e
+        version: https://codeload.github.com/nkzw-tech/oxlint-config/tar.gz/bf449304786239832eb7a0c4c4391f70a439ef3e(eslint@10.15.0)(oxlint@1.94.0(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3)))(tsrs@0.25.0-ts7.1.0-beta)(typescript@6.0.3)(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3))
     devDependencies:
       oxlint:
         specifier: ^1.94.0
@@ -289,11 +289,20 @@ packages:
     peerDependencies:
       eslint: '>= 9'
 
-  '@nkzw/oxlint-config@3.0.0':
-    resolution: {integrity: sha512-eBLEwZp7Q0HMPr5ixSBH+Brv4+ZFUJkjSnrpBJNHjBzusi4uau91VWVlzFUePascXWAmv2LVR3emwE8666oViw==}
+  '@nkzw/oxlint-config@https://codeload.github.com/nkzw-tech/oxlint-config/tar.gz/bf449304786239832eb7a0c4c4391f70a439ef3e':
+    resolution: {gitHosted: true, integrity: sha512-Ic9NXqvpvv/FQrB4Wb0CF7gjbYYLnQJ4LgOsjJdCjdczdd1sXT/VKMxNNp0iKcC3xFuljoWDIc5ZVLrQBzE0zw==, tarball: https://codeload.github.com/nkzw-tech/oxlint-config/tar.gz/bf449304786239832eb7a0c4c4391f70a439ef3e}
+    version: 3.0.1
     peerDependencies:
       oxlint: '>=1.94.0'
-      tsrs: '>=0.25.0-ts7.1.0-beta'
+      tsrs: '>=0.25.0-ts7.1.0-beta || ^7.1.0-beta.tsrs2'
+      vite-plus: '>=1.7.0'
+    peerDependenciesMeta:
+      oxlint:
+        optional: true
+      tsrs:
+        optional: true
+      vite-plus:
+        optional: true
 
   '@oxc-project/runtime@0.159.0':
     resolution: {integrity: sha512-z+wJlHpqB2rsnQ5PbQlWKC7lYISlHrniQ3N5JF4LGaa+kOopx5u5DMT2P7pN12fsXFg1gVcoLdRXPRyIS61OKQ==}
@@ -1648,13 +1657,15 @@ snapshots:
     dependencies:
       eslint: 10.15.0
 
-  '@nkzw/oxlint-config@3.0.0(eslint@10.15.0)(oxlint@1.94.0(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3)))(tsrs@0.25.0-ts7.1.0-beta)(typescript@6.0.3)':
+  '@nkzw/oxlint-config@https://codeload.github.com/nkzw-tech/oxlint-config/tar.gz/bf449304786239832eb7a0c4c4391f70a439ef3e(eslint@10.15.0)(oxlint@1.94.0(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3)))(tsrs@0.25.0-ts7.1.0-beta)(typescript@6.0.3)(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3))':
     dependencies:
       '@nkzw/eslint-plugin': 2.0.0(eslint@10.15.0)
       eslint-plugin-no-only-tests: 3.4.0
       eslint-plugin-perfectionist: 5.14.0(eslint@10.15.0)(typescript@6.0.3)
+    optionalDependencies:
       oxlint: 1.94.0(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3))
       tsrs: 0.25.0-ts7.1.0-beta
+      vite-plus: 1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3)
     transitivePeerDependencies:
       - '@typescript/native'
       - eslint
