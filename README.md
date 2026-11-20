@@ -7,8 +7,14 @@ and type-only imports.
 
 ## Usage
 
-Use Node.js 22.18+ on the 22.x line or Node.js 24+. Once the package is available
-on npm, install it with Oxlint and its type-aware backend.
+Use Node.js 22.18+ on the 22.x line or Node.js 24+. The preset runs type-aware
+rules. Keep your project's type-check command for compiler diagnostics. If your
+previous lint configuration ran the compiler, keep that coverage in CI with
+a separate type-check command or set `options.typeCheck` to `true`.
+
+### Standalone Oxlint
+
+Install the preset with Oxlint and its type-aware backend.
 
 ```sh
 npm install -D @cloudflare/oxlint-config oxlint@^1.94.0 tsrs@0.25.0-ts7.1.0-beta
@@ -20,17 +26,42 @@ Create `oxlint.config.ts` at the project root.
 import cloudflare from '@cloudflare/oxlint-config';
 import { defineConfig } from 'oxlint';
 
-export default defineConfig({ ...cloudflare });
+export default defineConfig({
+  extends: [cloudflare],
+  env: cloudflare.env,
+  ignorePatterns: cloudflare.ignorePatterns,
+});
 ```
 
-Spreading the preset into the root config preserves its environments in
-Oxlint 1.94. Place project-specific settings after the spread. To add rules
-or file overrides, spread the corresponding preset field as well.
+Use `oxlint .` for local linting and CI.
 
-Use `oxlint .` for local linting and CI. The preset runs type-aware rules.
-Keep your project's type-check command for compiler diagnostics. If your
-previous lint configuration ran the compiler, keep that coverage in CI with
-a separate type-check command or set `options.typeCheck` to `true`.
+### Vite+
+
+In a Vite+ project using `vite-plus@1.7.0` or later, install the preset.
+Vite+ supplies Oxlint and its type-aware backend.
+
+```sh
+vp add -D @cloudflare/oxlint-config
+```
+
+Import the Vite+ entry in the project's root `vite.config.ts`.
+
+```ts
+import cloudflare from '@cloudflare/oxlint-config/vite-plus';
+import { defineConfig } from 'vite-plus';
+
+export default defineConfig({
+  lint: {
+    extends: [cloudflare],
+    env: cloudflare.env,
+    ignorePatterns: cloudflare.ignorePatterns,
+  },
+});
+```
+
+Use `vp lint` for local linting and CI. Both examples set `env` and
+`ignorePatterns` explicitly because Oxlint 1.94 reads them from the root lint
+config. Add project-specific `rules` and `overrides` alongside `extends`.
 
 ## Migrating an existing project
 
