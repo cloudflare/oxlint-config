@@ -1,6 +1,6 @@
 {
   "name": "@cloudflare/oxlint-config",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Shared Oxlint rules for Cloudflare JavaScript and TypeScript projects.",
   "license": "Apache-2.0",
   "repository": {
@@ -28,16 +28,17 @@
     "test": "vp test"
   },
   "dependencies": {
-    "@nkzw/oxlint-config": "3.0.0"
+    "@nkzw/oxlint-config": "4.0.0"
   },
   "devDependencies": {
+    "eslint-plugin-perfectionist": "^5.14.0",
     "oxlint": "^1.94.0",
-    "tsrs": "^0.25.0-ts7.1.0-beta",
+    "tsrs": "^7.1.0-beta.tsrs4",
     "vite-plus": "^1.7.0"
   },
   "peerDependencies": {
     "oxlint": "^1.94.0",
-    "tsrs": ">=0.25.0-ts7.1.0-beta"
+    "tsrs": ">=0.25.0-ts7.1.0-beta || ^7.1.0-beta.tsrs2"
   },
   "engines": {
     "node": "^22.18.0 || >=24.0.0"
