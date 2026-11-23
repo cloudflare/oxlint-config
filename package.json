@@ -1,6 +1,6 @@
 {
   "name": "@cloudflare/oxlint-config",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Shared Oxlint rules for Cloudflare JavaScript and TypeScript projects.",
   "license": "Apache-2.0",
   "repository": {
