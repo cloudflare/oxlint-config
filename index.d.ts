@@ -4,6 +4,6 @@
 
 import type { OxlintConfig } from 'oxlint';
 
-declare const config: OxlintConfig;
+declare const config: OxlintConfig & Required<Pick<OxlintConfig, 'env' | 'ignorePatterns'>>;
 
 export default config;

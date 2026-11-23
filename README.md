@@ -6,10 +6,13 @@ rules for type safety, promise handling, and type-only imports.
 
 ## Usage
 
-Use Node.js 22.18 or later. It is the first 22.x release that can load
-`oxlint.config.ts` without extra flags.
+Use Node.js 22.18 or later on the 22.x line, or Node.js 24 or later.
+Node.js 22.18 is the first 22.x release that can load `oxlint.config.ts`
+without extra flags.
 
-Install the preset with Oxlint and `tsrs`, its type-aware backend:
+### Standalone Oxlint
+
+Install the preset with Oxlint and `tsrs`, its type-aware backend.
 
 ```sh
 npm install -D @cloudflare/oxlint-config oxlint@^1.94.0 tsrs@^7.1.0-beta.tsrs2
@@ -21,20 +24,57 @@ Create `oxlint.config.ts` in the project root:
 import cloudflare from '@cloudflare/oxlint-config';
 import { defineConfig } from 'oxlint';
 
-export default defineConfig({ ...cloudflare });
+export default defineConfig({
+  extends: [cloudflare],
+  env: cloudflare.env,
+  ignorePatterns: cloudflare.ignorePatterns,
+});
 ```
 
-Spread the preset instead of using `extends`. Put project settings after the spread, and spread the preset's `rules` or `overrides` when adding to them:
+Run `oxlint .` locally and in CI.
+
+### Vite+
+
+In a project that uses `vite-plus@1.7.0` or later, install the preset.
+Vite+ supplies Oxlint and its type-aware backend.
+
+```sh
+vp add -D @cloudflare/oxlint-config
+```
+
+Import the Vite+ entry in the project's root `vite.config.ts`.
+
+```ts
+import cloudflare from '@cloudflare/oxlint-config/vite-plus';
+import { defineConfig } from 'vite-plus';
+
+export default defineConfig({
+  lint: {
+    extends: [cloudflare],
+    env: cloudflare.env,
+    ignorePatterns: cloudflare.ignorePatterns,
+  },
+});
+```
+
+Run `vp lint` locally and in CI.
+
+### Project settings
+
+Both examples set `env` and `ignorePatterns` explicitly because Oxlint 1.94
+reads them from the root lint config. To customize the preset, add `rules`
+and `overrides` alongside `extends`. This standalone example allows non-null
+assertions throughout the project and console calls in `scripts/`.
 
 ```ts
 export default defineConfig({
-  ...cloudflare,
+  extends: [cloudflare],
+  env: cloudflare.env,
+  ignorePatterns: cloudflare.ignorePatterns,
   rules: {
-    ...cloudflare.rules,
     'typescript/no-non-null-assertion': 'off',
   },
   overrides: [
-    ...(cloudflare.overrides ?? []),
     {
       files: ['scripts/**'],
       rules: { 'no-console': 'off' },
@@ -43,9 +83,8 @@ export default defineConfig({
 });
 ```
 
-Run `oxlint .` locally and in CI. Oxlint doesn't report TypeScript compiler
-errors by default, so keep your type-check command in CI or set
-`options.typeCheck: true`.
+Oxlint doesn't report TypeScript compiler errors by default, so keep your
+type-check command in CI or set `options.typeCheck: true`.
 
 ## Migrating an existing project
 

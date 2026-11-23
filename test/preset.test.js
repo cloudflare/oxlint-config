@@ -46,7 +46,11 @@ test('a consumer can load the preset with its lint rules and file overrides', as
       import cloudflare from '@cloudflare/oxlint-config';
       import { defineConfig } from 'oxlint';
 
-      export default defineConfig({ ...cloudflare });
+      export default defineConfig({
+        env: cloudflare.env,
+        extends: [cloudflare],
+        ignorePatterns: cloudflare.ignorePatterns,
+      });
     `,
     'promises.ts': `
       declare function load(): Promise<string>;
