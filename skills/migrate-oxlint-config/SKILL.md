@@ -8,8 +8,10 @@ description: Migrate an existing JavaScript or TypeScript project to @cloudflare
 ## Commit a passing baseline
 
 1. Run the project's current lint command to establish its baseline. Adopt
-   `@cloudflare/oxlint-config` using the installation and configuration in the
-   package README. Update the lint command and CI to use Oxlint where needed.
+   the preset using the setup for the project's lint command in the package
+   README. Use `@cloudflare/oxlint-config` with standalone Oxlint or
+   `@cloudflare/oxlint-config/vite-plus` with `vp lint`. Update the project's
+   lint command and CI where needed.
    Carry forward applicable project rules, ignore patterns, environments,
    and file overrides. Keep the project's type-check command. If the old preset
    ran the compiler in CI, preserve that coverage with a separate type-check
@@ -17,20 +19,9 @@ description: Migrate an existing JavaScript or TypeScript project to @cloudflare
 2. Run the project's lint command with the new preset across the same files
    checked in CI. Temporarily set each newly failing rule to `'off'` in the
    project config. This may disable most of the preset in a large migration.
-   Keep the rest enabled.
-
-   ```ts
-   import cloudflare from '@cloudflare/oxlint-config';
-   import { defineConfig } from 'oxlint';
-
-   export default defineConfig({
-     ...cloudflare,
-     rules: {
-       ...cloudflare.rules,
-       'typescript/no-unsafe-assignment': 'off', // Temporary during migration
-     },
-   });
-   ```
+   Keep the rest enabled. For example, add
+   `'typescript/no-unsafe-assignment': 'off'` to `rules` in `oxlint.config.ts`
+   or to `lint.rules` in a Vite+ project's `vite.config.ts`.
 
    If a matching file override re-enables a rule, append a scoped override
    after the inherited and project overrides to disable it there as well.

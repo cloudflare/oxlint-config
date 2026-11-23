@@ -176,9 +176,12 @@ importers:
   .:
     dependencies:
       '@nkzw/oxlint-config':
-        specifier: 3.0.1
-        version: 3.0.1(eslint@10.15.0)(oxlint@1.94.0(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3)))(tsrs@7.1.0-beta.tsrs3)(typescript@6.0.3)
+        specifier: 4.1.0
+        version: 4.1.0(eslint-plugin-perfectionist@5.14.0(eslint@10.15.0)(typescript@6.0.3))(eslint@10.15.0)(oxlint@1.94.0(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3)))(tsrs@7.1.0-beta.tsrs3)(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3))
     devDependencies:
+      eslint-plugin-perfectionist:
+        specifier: ^5.14.0
+        version: 5.14.0(eslint@10.15.0)(typescript@6.0.3)
       oxlint:
         specifier: ^1.94.0
         version: 1.94.0(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3))
@@ -284,16 +287,30 @@ packages:
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
 
-  '@nkzw/eslint-plugin@2.0.0':
-    resolution: {integrity: sha512-IoU8kOqHfnf7se2dGxMD/7RPm6WVjzjOjWSo7FulRx3lJzuZvXioSkT5Nd82l66DH3Pl2whw74lPT1di3KMwFA==}
+  '@nkzw/eslint-plugin@3.0.0':
+    resolution: {integrity: sha512-J6Ms/OzUxx7BNBggCKOqFWbESgAJYjvXvekCjjpxVJA2fBv5xOsC5P+2WDYqQUMCvDOU3GxBgG/jrmbqf+/wQA==}
     peerDependencies:
       eslint: '>= 9'
+    peerDependenciesMeta:
+      eslint:
+        optional: true
 
-  '@nkzw/oxlint-config@3.0.1':
-    resolution: {integrity: sha512-okUqb58T73yJmCB7E6ZSrfW+dmsDj2ZesWIm/GAwAkf2b2VGDj92zPQZpz3mkuOlS+l0mXpNlOGYqXFhriiYAA==}
+  '@nkzw/oxlint-config@4.1.0':
+    resolution: {integrity: sha512-uFJxSqD8LPGe+uYVh+EC9BwndUGr3h7+aHQhKcdUANNSV4c1vvRoOqqHUTlML5RnHtvABtapW1ZyY4gkz6sKOA==}
     peerDependencies:
+      eslint-plugin-perfectionist: ^5.14.0
       oxlint: '>=1.94.0'
       tsrs: '>=0.25.0-ts7.1.0-beta || ^7.1.0-beta.tsrs2'
+      vite-plus: '>=1.7.0'
+    peerDependenciesMeta:
+      eslint-plugin-perfectionist:
+        optional: true
+      oxlint:
+        optional: true
+      tsrs:
+        optional: true
+      vite-plus:
+        optional: true
 
   '@oxc-project/runtime@0.159.0':
     resolution: {integrity: sha512-z+wJlHpqB2rsnQ5PbQlWKC7lYISlHrniQ3N5JF4LGaa+kOopx5u5DMT2P7pN12fsXFg1gVcoLdRXPRyIS61OKQ==}
@@ -1644,22 +1661,21 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@nkzw/eslint-plugin@2.0.0(eslint@10.15.0)':
-    dependencies:
+  '@nkzw/eslint-plugin@3.0.0(eslint@10.15.0)':
+    optionalDependencies:
       eslint: 10.15.0
 
-  '@nkzw/oxlint-config@3.0.1(eslint@10.15.0)(oxlint@1.94.0(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3)))(tsrs@7.1.0-beta.tsrs3)(typescript@6.0.3)':
+  '@nkzw/oxlint-config@4.1.0(eslint-plugin-perfectionist@5.14.0(eslint@10.15.0)(typescript@6.0.3))(eslint@10.15.0)(oxlint@1.94.0(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3)))(tsrs@7.1.0-beta.tsrs3)(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3))':
     dependencies:
-      '@nkzw/eslint-plugin': 2.0.0(eslint@10.15.0)
+      '@nkzw/eslint-plugin': 3.0.0(eslint@10.15.0)
       eslint-plugin-no-only-tests: 3.4.0
+    optionalDependencies:
       eslint-plugin-perfectionist: 5.14.0(eslint@10.15.0)(typescript@6.0.3)
       oxlint: 1.94.0(vite-plus@1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3))
       tsrs: 7.1.0-beta.tsrs3
+      vite-plus: 1.7.0(@vitest/ui@5.1.0)(typescript@6.0.3)
     transitivePeerDependencies:
-      - '@typescript/native'
       - eslint
-      - supports-color
-      - typescript
 
   '@oxc-project/runtime@0.159.0': {}
 
