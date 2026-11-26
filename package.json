@@ -10,6 +10,7 @@
   "files": [
     "index.js",
     "index.d.ts",
+    "plugin",
     "vite-plus.d.ts",
     "skills/migrate-oxlint-config/SKILL.md"
   ],

@@ -37,6 +37,10 @@ test('a consumer can load the preset with its lint rules and file overrides', as
     'globals.js': 'export const location = window.location.href + process.cwd();',
     'method.test.ts': detachedMethod,
     'method.ts': detachedMethod,
+    'mocking.test.ts': `
+      vi.mock('node:fs');
+      vi.mock('./method');
+    `,
     'nullish.ts': `
       export const loose = (value: number | null | undefined) => value == null;
       export const strict = (value: number | null | undefined) =>
@@ -88,6 +92,7 @@ test('a consumer can load the preset with its lint rules and file overrides', as
       compilerOptions: { noEmit: true, strict: true, types: [] },
       include: ['*.ts', 'server/src/*.tsx'],
     }),
+    'vitest-globals.d.ts': 'declare const vi: { mock(path: string): void };',
   };
   await Promise.all(
     Object.entries(fixtures).map(([name, source]) => writeFile(join(project, name), source)),
@@ -114,6 +119,7 @@ test('a consumer can load the preset with its lint rules and file overrides', as
     'assertion.ts typescript(no-unsafe-type-assertion) error',
     'eval.js eslint(no-eval) error',
     'method.ts typescript(unbound-method) error',
+    'mocking.test.ts cloudflare(no-first-party-module-mocking) error',
     'nullish.ts eslint(eqeqeq) error',
     'promises.ts typescript(no-floating-promises) error',
     'promises.ts typescript(no-misused-promises) error',

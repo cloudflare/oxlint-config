@@ -122,6 +122,19 @@ agents the full workflow. The npm package includes it at the same path.
   turn off `only-throw-error`, `unbound-method`, `no-explicit-any`,
   `no-non-null-assertion`, `no-unsafe-argument`, `no-unsafe-assignment`, and
   `no-unsafe-member-access`.
+- `cloudflare/no-first-party-module-mocking` reports Vitest `vi.mock` and
+  `vi.doMock` calls on your own code: relative, absolute, `#`, `@/`, and `~/`
+  paths. Packages such as `axios` stay mockable. List more modules to report
+  in `deny` and exceptions in `allow`, which wins. Path entries are relative
+  to where Oxlint runs; start one with `**/` to match at any depth.
+
+  ```ts
+  'cloudflare/no-first-party-module-mocking': [
+    'error',
+    { allow: ['**/generated/'], deny: ['@your-org/'] },
+  ],
+  ```
+
 - `no-console` applies everywhere, including the entry points that nkzw
   exempts. Add a file override where logging is expected.
 

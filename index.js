@@ -14,6 +14,10 @@ const typeScriptTests = [
 const config = {
   ...nkzw,
   ignorePatterns: ['**/node_modules/**'],
+  jsPlugins: [
+    ...(nkzw.jsPlugins ?? []),
+    { name: 'cloudflare', specifier: import.meta.resolve('./plugin/index.js') },
+  ],
   overrides: [
     // nkzw exempts specific application entry points from no-console.
     ...(nkzw.overrides ?? []).filter(({ rules }) => rules?.['no-console'] !== 'off'),
@@ -83,6 +87,9 @@ const config = {
     'typescript/no-floating-promises': 'error',
     'typescript/use-unknown-in-catch-callback-variable': 'error',
     'unicorn/prefer-set-has': 'error',
+
+    // Replace first-party dependencies through real seams, not module mocks.
+    'cloudflare/no-first-party-module-mocking': 'error',
   },
 };
 
