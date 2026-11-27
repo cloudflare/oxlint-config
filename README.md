@@ -124,9 +124,23 @@ agents the full workflow. The npm package includes it at the same path.
   `no-unsafe-member-access`.
 - `cloudflare/no-first-party-module-mocking` reports Vitest `vi.mock` and
   `vi.doMock` calls on your own code: relative, absolute, `#`, `@/`, and `~/`
-  paths. Packages such as `axios` stay mockable. List more modules to report
+  paths. The rule recognizes `vi` and `vitest` imported from `vitest` or
+  `vite-plus/test`, including namespace imports and stable local aliases.
+  It skips reassigned aliases and targets whose complete path is unknown,
+  such as an interpolated template.
+
+  For projects using Vitest globals, set `vitestGlobals: true` in the test
+  file override. To recognize a helper that re-exports the Vitest API, add
+  its exact package or alias specifier to `vitestModules`, or use a path
+  like `./test/helpers` relative to the lint working directory.
+
+  Packages such as `axios` stay mockable. List more modules to report
   in `deny` and exceptions in `allow`, which wins. Path entries are relative
-  to where Oxlint runs; start one with `**/` to match at any depth.
+  to where Oxlint runs. Start one with `**/` to match at any depth,
+  including in `@/`, `~/`, and `#` specifiers. The rule uses these path
+  conventions to identify first-party code. List aliases that point to
+  dependencies in `allow`, and bare workspace package names or scopes in
+  `deny`.
 
   ```ts
   'cloudflare/no-first-party-module-mocking': [

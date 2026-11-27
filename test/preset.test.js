@@ -38,6 +38,7 @@ test('a consumer can load the preset with its lint rules and file overrides', as
     'method.test.ts': detachedMethod,
     'method.ts': detachedMethod,
     'mocking.test.ts': `
+      import { vi } from 'vite-plus/test';
       vi.mock('node:fs');
       vi.mock('./method');
     `,
@@ -92,7 +93,6 @@ test('a consumer can load the preset with its lint rules and file overrides', as
       compilerOptions: { noEmit: true, strict: true, types: [] },
       include: ['*.ts', 'server/src/*.tsx'],
     }),
-    'vitest-globals.d.ts': 'declare const vi: { mock(path: string): void };',
   };
   await Promise.all(
     Object.entries(fixtures).map(([name, source]) => writeFile(join(project, name), source)),

@@ -1,14 +1,14 @@
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, posix, relative, resolve, sep, win32 } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const vitestSources = new Set(['vite-plus/test', 'vitest']);
+const vitestNames = new Set(['vi', 'vitest']);
 const pathSources = new Set(['node:path', 'node:path/posix', 'path', 'path/posix']);
 const urlSources = new Set(['node:url', 'url']);
 const globalObjects = new Set(['global', 'globalThis', 'self', 'window']);
 const moduleMockMethods = new Set(['doMock', 'mock']);
 const aliasPrefixes = ['#', '@/', '~/'];
 const sourceExtension = /\.[cm]?[jt]sx?$/;
-const maxAliasDepth = 5;
 
 const typeWrappers = new Set([
   'ParenthesizedExpression',
@@ -26,6 +26,7 @@ function unwrap(node) {
   return current;
 }
 
+// Scope lookup adapted from dmmulroy/anti-slop. See ../LICENSE-anti-slop.
 function resolveVariable(sourceCode, identifier) {
   let scope = sourceCode.getScope(identifier);
   while (scope !== null) {
@@ -115,10 +116,12 @@ function normalizeEntries(entries) {
 /** Classify a module specifier relative to the linted file and the project root. */
 function classify(text, file) {
   if (!isPathSpecifier(text)) {
+    const isAlias = aliasPrefixes.some((prefix) => text.startsWith(prefix));
+    const normalized = isAlias ? posix.normalize(text) : text;
     return {
-      candidates: [text],
-      firstParty: aliasPrefixes.some((prefix) => text.startsWith(prefix)),
-      isPath: false,
+      candidates: isAlias ? [normalized, normalized.replace(sourceExtension, '')] : [text],
+      firstParty: isAlias,
+      isPath: isAlias,
     };
   }
   let absolute;
@@ -126,7 +129,7 @@ function classify(text, file) {
     try {
       absolute = fileURLToPath(text);
     } catch {
-      return { candidates: [], firstParty: true, isPath: true };
+      return { candidates: [], firstParty: false, isPath: true };
     }
   } else if (text.startsWith('.')) {
     absolute = resolve(dirname(file.filename), text);
@@ -135,11 +138,11 @@ function classify(text, file) {
   } else {
     absolute = text;
   }
-  if (!isAbsolute(absolute)) {
-    return { candidates: [], firstParty: true, isPath: true };
-  }
   const trailingSlash = /[\\/]$/.test(text) ? '/' : '';
-  const projectPath = `${relative(file.cwd, absolute).split(sep).join('/')}${trailingSlash}`;
+  const normalized = isAbsolute(absolute)
+    ? relative(file.cwd, absolute).split(sep).join('/')
+    : win32.normalize(absolute).split('\\').join('/');
+  const projectPath = normalized + trailingSlash;
   return {
     candidates: [projectPath, projectPath.replace(sourceExtension, '')],
     firstParty: !projectPath.split('/').includes('node_modules'),
@@ -156,13 +159,20 @@ function isReported(text, file, { allow, deny }) {
   return firstParty || deny.some(matches);
 }
 
+function isValueImport(definition, sources) {
+  return (
+    definition.type === 'ImportBinding' &&
+    definition.parent?.type === 'ImportDeclaration' &&
+    definition.parent.importKind !== 'type' &&
+    definition.node.importKind !== 'type' &&
+    sources.has(definition.parent.source.value)
+  );
+}
+
 function importDefinitions(sourceCode, identifier, sources) {
   return (
-    resolveVariable(sourceCode, identifier)?.defs.filter(
-      (definition) =>
-        definition.type === 'ImportBinding' &&
-        definition.parent?.type === 'ImportDeclaration' &&
-        sources(definition.parent.source.value),
+    resolveVariable(sourceCode, identifier)?.defs.filter((definition) =>
+      isValueImport(definition, sources),
     ) ?? []
   );
 }
@@ -183,7 +193,7 @@ function isNamespaceOrDefault(definition) {
 
 function isImportedFunction(sourceCode, callee, sources, name) {
   if (callee.type === 'Identifier') {
-    return importDefinitions(sourceCode, callee, (source) => sources.has(source)).some(
+    return importDefinitions(sourceCode, callee, sources).some(
       (definition) => importedName(definition.node) === name,
     );
   }
@@ -191,119 +201,90 @@ function isImportedFunction(sourceCode, callee, sources, name) {
     callee.type === 'MemberExpression' &&
     callee.object.type === 'Identifier' &&
     staticPropertyName(callee) === name &&
-    importDefinitions(sourceCode, callee.object, (source) => sources.has(source)).some(
-      isNamespaceOrDefault,
-    )
+    importDefinitions(sourceCode, callee.object, sources).some(isNamespaceOrDefault)
   );
 }
 
-function declarator(sourceCode, identifier) {
-  const variable = resolveVariable(sourceCode, identifier);
-  const definition = variable?.defs.length === 1 ? variable.defs[0] : undefined;
-  return definition?.type === 'Variable' && definition.node.type === 'VariableDeclarator'
-    ? definition
-    : null;
+/** The property that initialized this local in an object destructuring pattern. */
+function destructuredKey(pattern, name) {
+  const property = pattern.properties.find((candidate) => {
+    if (candidate.type !== 'Property') {
+      return false;
+    }
+    const local =
+      candidate.value.type === 'AssignmentPattern' ? candidate.value.left : candidate.value;
+    return local.type === 'Identifier' && local.name === name;
+  });
+  return property === undefined ? null : propertyKeyName(property);
 }
 
-/** Find where a destructured binding such as `const { mock } = vi` came from. */
-function destructuredFrom(sourceCode, identifier) {
-  const definition = declarator(sourceCode, identifier);
-  if (definition?.node.id.type !== 'ObjectPattern' || definition.node.init === null) {
-    return null;
+function isViSource(context, source, vitestModules) {
+  if (vitestModules.length === 0) {
+    return vitestSources.has(source);
   }
-  const property = definition.node.id.properties.find(
-    (candidate) =>
-      candidate.type === 'Property' &&
-      (candidate.value.type === 'Identifier'
-        ? candidate.value.name === identifier.name
-        : candidate.value.type === 'AssignmentPattern' &&
-          candidate.value.left.type === 'Identifier' &&
-          candidate.value.left.name === identifier.name),
-  );
-  const key = property === undefined ? null : propertyKeyName(property);
-  return key === null ? null : { key, object: definition.node.init };
+  if (!isPathSpecifier(source)) {
+    return vitestSources.has(source) || vitestModules.includes(source);
+  }
+  const { candidates } = classify(source, context);
+  return candidates.some((candidate) => vitestModules.includes(`./${candidate}`));
 }
 
-/** `vi` may come from Vitest itself or be re-exported by a first-party test helper. */
-function isViSource(context, lists, source) {
-  if (vitestSources.has(source)) {
-    return true;
+// Walk the call backwards: mock/doMock belongs to the API, and vi/vitest belongs to its namespace.
+function propertyOwner(expected, key) {
+  if (expected === 'method' && moduleMockMethods.has(key)) {
+    return 'api';
   }
-  const { candidates, firstParty, isPath } = classify(source, context);
-  return (
-    firstParty ||
-    lists.deny.some((entry) =>
-      candidates.some((candidate) => matchesEntry(candidate, entry, isPath)),
-    )
-  );
+  return expected === 'api' && vitestNames.has(key) ? 'namespace' : null;
 }
 
-function isVi(context, wrapped, lists, depth = 0) {
-  const node = unwrap(wrapped);
-  if (depth > maxAliasDepth || node === undefined || node === null) {
-    return false;
-  }
-  const { sourceCode } = context;
-  const viSource = (source) => isViSource(context, lists, source);
-  if (node.type === 'Identifier') {
-    if (isUnbound(sourceCode, node)) {
-      return node.name === 'vi';
+function isModuleMockCallee(context, callee, { sources, vitestGlobals }) {
+  const seen = new Set();
+  let expected = 'method';
+  let node = unwrap(callee);
+  while (node && expected !== null) {
+    if (node.type === 'MemberExpression') {
+      expected = propertyOwner(expected, staticPropertyName(node));
+      node = unwrap(node.object);
+      continue;
+    }
+    if (node.type !== 'Identifier') {
+      return false;
+    }
+    const variable = resolveVariable(context.sourceCode, node);
+    if (!variable || variable.defs.length === 0) {
+      return (
+        vitestGlobals &&
+        ((expected === 'api' && vitestNames.has(node.name)) ||
+          (expected === 'namespace' && globalObjects.has(node.name)))
+      );
+    }
+    if (variable.defs.length !== 1 || seen.has(variable)) {
+      return false;
+    }
+    seen.add(variable);
+    const [definition] = variable.defs;
+    if (isValueImport(definition, sources)) {
+      return (
+        (expected === 'namespace' && definition.node.type === 'ImportNamespaceSpecifier') ||
+        (expected === 'api' && vitestNames.has(importedName(definition.node)))
+      );
     }
     if (
-      importDefinitions(sourceCode, node, viSource).some(
-        (definition) => importedName(definition.node) === 'vi',
-      )
+      definition.type !== 'Variable' ||
+      definition.node.type !== 'VariableDeclarator' ||
+      variable.references.some((ref) => ref.isWrite() && !ref.init)
     ) {
-      return true;
+      return false;
     }
-    const definition = declarator(sourceCode, node);
-    if (definition?.node.id.type === 'Identifier') {
-      if (definition.node.init !== null) {
-        return isVi(context, definition.node.init, lists, depth + 1);
-      }
-      return node.name === 'vi' && definition.parent?.declare === true;
+    const { id, init } = definition.node;
+    if (id.type === 'ObjectPattern') {
+      expected = propertyOwner(expected, destructuredKey(id, node.name));
+    } else if (id.type !== 'Identifier') {
+      return false;
     }
-    const destructured = destructuredFrom(sourceCode, node);
-    return destructured?.key === 'vi' && isViNamespace(context, destructured.object, lists);
-  }
-  if (node.type === 'MemberExpression' && staticPropertyName(node) === 'vi') {
-    return isViNamespace(context, node.object, lists);
+    node = unwrap(init);
   }
   return false;
-}
-
-function isViNamespace(context, wrapped, lists) {
-  const node = unwrap(wrapped);
-  if (node?.type !== 'Identifier') {
-    return false;
-  }
-  const { sourceCode } = context;
-  if (globalObjects.has(node.name) && isUnbound(sourceCode, node)) {
-    return true;
-  }
-  return importDefinitions(sourceCode, node, (source) => isViSource(context, lists, source)).some(
-    (definition) => definition.node.type === 'ImportNamespaceSpecifier',
-  );
-}
-
-function isModuleMockCallee(context, wrapped, lists) {
-  const callee = unwrap(wrapped);
-  if (callee.type === 'MemberExpression') {
-    return moduleMockMethods.has(staticPropertyName(callee)) && isVi(context, callee.object, lists);
-  }
-  if (callee.type !== 'Identifier') {
-    return false;
-  }
-  const destructured = destructuredFrom(context.sourceCode, callee);
-  if (destructured !== null) {
-    return moduleMockMethods.has(destructured.key) && isVi(context, destructured.object, lists);
-  }
-  const init = unwrap(declarator(context.sourceCode, callee)?.node.init);
-  return (
-    init?.type === 'MemberExpression' &&
-    moduleMockMethods.has(staticPropertyName(init)) &&
-    isVi(context, init.object, lists)
-  );
 }
 
 /** Evaluate `path.resolve`, `path.join`, `new URL(..., import.meta.url)`, and `fileURLToPath`. */
@@ -325,20 +306,35 @@ function staticPath(context, wrapped) {
   if (isImportMeta(node, 'filename')) {
     return context.filename;
   }
-  if (node.type === 'MemberExpression' && ['href', 'pathname'].includes(staticPropertyName(node))) {
-    return staticUrlPath(node.object, context);
+  if (node.type === 'MemberExpression') {
+    const property = staticPropertyName(node);
+    if (property === 'href' || property === 'pathname') {
+      return staticFileUrl(node.object, context)?.[property] ?? null;
+    }
   }
   if (node.type !== 'CallExpression') {
     return null;
   }
   if (isImportMeta(node.callee, 'resolve')) {
     const specifier = node.arguments.length === 1 ? staticString(node.arguments[0]) : null;
-    return specifier !== null && specifier.startsWith('.')
-      ? resolve(dirname(context.filename), specifier)
+    return specifier !== null && (specifier.startsWith('./') || specifier.startsWith('../'))
+      ? new URL(specifier, pathToFileURL(context.filename)).href
       : specifier;
   }
   if (isImportedFunction(context.sourceCode, node.callee, urlSources, 'fileURLToPath')) {
-    return node.arguments.length === 1 ? staticPath(context, node.arguments[0]) : null;
+    if (node.arguments.length !== 1) {
+      return null;
+    }
+    const input = unwrap(node.arguments[0]);
+    const url = staticFileUrl(input, context) ?? staticPath(context, input);
+    if (url === null) {
+      return null;
+    }
+    try {
+      return fileURLToPath(url);
+    } catch {
+      return null;
+    }
   }
   const method = ['join', 'resolve'].find((name) =>
     isImportedFunction(context.sourceCode, node.callee, pathSources, name),
@@ -353,7 +349,7 @@ function staticPath(context, wrapped) {
   return method === 'resolve' ? resolve(context.cwd, ...parts) : join(...parts);
 }
 
-function staticUrlPath(node, context) {
+function staticFileUrl(node, context) {
   if (
     node.type !== 'NewExpression' ||
     node.callee.type !== 'Identifier' ||
@@ -370,13 +366,13 @@ function staticUrlPath(node, context) {
   }
   try {
     const url = new URL(text, pathToFileURL(context.filename));
-    return url.protocol === 'file:' ? fileURLToPath(url) : null;
+    return url.protocol === 'file:' && url.hostname === '' ? url : null;
   } catch {
     return null;
   }
 }
 
-/** Return the statically known specifier, or its static prefix for template literals. */
+/** Only a complete module specifier can be checked against both allow and deny. */
 function mockedSpecifier(context, wrapped) {
   const argument = unwrap(wrapped);
   if (argument === undefined) {
@@ -384,10 +380,6 @@ function mockedSpecifier(context, wrapped) {
   }
   if (argument.type === 'ImportExpression') {
     return mockedSpecifier(context, argument.source);
-  }
-  if (argument.type === 'TemplateLiteral' && argument.expressions.length > 0) {
-    const prefix = argument.quasis[0]?.value.cooked ?? '';
-    return prefix === '' ? null : prefix;
   }
   const text = staticString(argument);
   if (text !== null) {
@@ -400,14 +392,33 @@ function mockedSpecifier(context, wrapped) {
 /** Ban Vitest module mocks of first-party code in favor of real dependency seams. */
 export const noFirstPartyModuleMockingRule = {
   createOnce(context) {
-    let lists = { allow: [], deny: [] };
+    let lists;
     return {
       before() {
-        if (!/\bvi\b/.test(context.sourceCode.text)) {
+        const {
+          allow = [],
+          deny = [],
+          vitestGlobals = false,
+          vitestModules = [],
+        } = context.options[0] ?? {};
+        const sources = new Set();
+        for (const statement of context.sourceCode.ast.body) {
+          if (
+            statement.type === 'ImportDeclaration' &&
+            isViSource(context, statement.source.value, vitestModules)
+          ) {
+            sources.add(statement.source.value);
+          }
+        }
+        if (!vitestGlobals && sources.size === 0) {
           return false;
         }
-        const { allow = [], deny = [] } = context.options[0] ?? {};
-        lists = { allow: normalizeEntries(allow), deny: normalizeEntries(deny) };
+        lists = {
+          allow: normalizeEntries(allow),
+          deny: normalizeEntries(deny),
+          sources,
+          vitestGlobals,
+        };
       },
       CallExpression(node) {
         if (!isModuleMockCallee(context, node.callee, lists)) {
@@ -442,6 +453,12 @@ export const noFirstPartyModuleMockingRule = {
         properties: {
           allow: { items: { minLength: 1, type: 'string' }, type: 'array', uniqueItems: true },
           deny: { items: { minLength: 1, type: 'string' }, type: 'array', uniqueItems: true },
+          vitestGlobals: { type: 'boolean' },
+          vitestModules: {
+            items: { minLength: 1, type: 'string' },
+            type: 'array',
+            uniqueItems: true,
+          },
         },
         type: 'object',
       },

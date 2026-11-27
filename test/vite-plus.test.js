@@ -3,10 +3,10 @@
 //     https://opensource.org/licenses/Apache-2.0
 
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { findPackageJSON } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { expect, test } from 'vite-plus/test';
 import manifest from '../package.json' with { type: 'json' };
 
@@ -29,6 +29,11 @@ test(
       export const missing = value == null;
       export const positive = [1, 2].filter((n) => n > 0).map((n) => n + 1);
       Promise.resolve(1);
+    `,
+      'mocking.test.ts': `
+      import { vitest as api } from 'vite-plus/test';
+      api.doMock('./input');
+      api.doMock('@/generated/client');
     `,
       'package.json': JSON.stringify({
         devDependencies: {
@@ -78,6 +83,9 @@ test(
           env: cloudflare.env,
           extends: [cloudflare],
           ignorePatterns: cloudflare.ignorePatterns,
+          rules: {
+            'cloudflare/no-first-party-module-mocking': ['error', { allow: ['**/generated/'] }],
+          },
         },
       });
     `,
@@ -88,6 +96,9 @@ test(
     execFileSync('vp', ['install', '--no-frozen-lockfile'], { cwd, stdio: 'inherit' });
     const project = join(cwd, 'package.json');
     const preset = await realpath(findPackageJSON('@cloudflare/oxlint-config', project));
+    expect(await readFile(join(dirname(preset), 'plugin/LICENSE-anti-slop'), 'utf8')).toContain(
+      'Copyright (c) 2026 Dillon Mulroy',
+    );
     const upstream = await realpath(findPackageJSON('@nkzw/oxlint-config', preset));
     for (const consumer of [project, preset, upstream]) {
       for (const peer of ['oxlint', 'tsrs']) {
@@ -105,13 +116,21 @@ test(
     });
     const result = spawnSync(
       process.execPath,
-      ['node_modules/vite-plus/bin/vp', 'lint', '--format=json', 'input.ts', 'globals.js'],
+      [
+        'node_modules/vite-plus/bin/vp',
+        'lint',
+        '--format=json',
+        'input.ts',
+        'globals.js',
+        'mocking.test.ts',
+      ],
       { cwd, encoding: 'utf8', env },
     );
     expect(result.error).toBeUndefined();
     expect(result.status, result.stderr || result.stdout).toBe(1);
     const { diagnostics } = JSON.parse(result.stdout);
     expect(diagnostics.map(({ code }) => code).sort()).toEqual([
+      'cloudflare(no-first-party-module-mocking)',
       'eslint(eqeqeq)',
       'quality(no-array-filter-map)',
       'typescript(no-floating-promises)',
