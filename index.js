@@ -83,13 +83,12 @@ const config = {
 
     // Catch errors that can otherwise be swallowed or left unhandled.
     '@typescript-eslint/no-misused-promises': 'error',
+    'cloudflare/no-first-party-module-mocking': 'error',
     'no-promise-executor-return': 'error',
     'typescript/no-floating-promises': 'error',
     'typescript/use-unknown-in-catch-callback-variable': 'error',
-    'unicorn/prefer-set-has': 'error',
 
-    // Replace first-party dependencies through real seams, not module mocks.
-    'cloudflare/no-first-party-module-mocking': 'error',
+    'unicorn/prefer-set-has': 'error',
   },
 };
 
