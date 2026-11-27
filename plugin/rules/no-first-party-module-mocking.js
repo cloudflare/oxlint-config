@@ -26,7 +26,7 @@ function unwrap(node) {
   return current;
 }
 
-// Scope lookup adapted from dmmulroy/anti-slop. See ../LICENSE-anti-slop.
+// Scope lookup adapted from dmmulroy/anti-slop.
 function resolveVariable(sourceCode, identifier) {
   let scope = sourceCode.getScope(identifier);
   while (scope !== null) {

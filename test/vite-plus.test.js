@@ -3,10 +3,10 @@
 //     https://opensource.org/licenses/Apache-2.0
 
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { findPackageJSON } from 'node:module';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { expect, test } from 'vite-plus/test';
 import manifest from '../package.json' with { type: 'json' };
 
@@ -96,9 +96,6 @@ test(
     execFileSync('vp', ['install', '--no-frozen-lockfile'], { cwd, stdio: 'inherit' });
     const project = join(cwd, 'package.json');
     const preset = await realpath(findPackageJSON('@cloudflare/oxlint-config', project));
-    expect(await readFile(join(dirname(preset), 'plugin/LICENSE-anti-slop'), 'utf8')).toContain(
-      'Copyright (c) 2026 Dillon Mulroy',
-    );
     const upstream = await realpath(findPackageJSON('@nkzw/oxlint-config', preset));
     for (const consumer of [project, preset, upstream]) {
       for (const peer of ['oxlint', 'tsrs']) {
